@@ -16,12 +16,30 @@ class TelnyxService:
     async def answer_call(self, call_control_id: str) -> dict:
         """Answer an incoming call"""
         try:
-            result = telnyx.Call.answer(call_control_id)
+            # Use the correct Telnyx API method
+            call = telnyx.Call()
+            call.call_control_id = call_control_id
+            result = call.answer()
             logger.info(f"Answered call: {call_control_id}")
             return {"status": "answered", "call_control_id": call_control_id}
         except Exception as e:
             logger.error(f"Error answering call: {str(e)}")
-            raise
+            # Try alternative approach
+            try:
+                import requests
+                headers = {
+                    'Authorization': f'Bearer {self.api_key}',
+                    'Content-Type': 'application/json'
+                }
+                response = requests.post(
+                    f'https://api.telnyx.com/v2/calls/{call_control_id}/actions/answer',
+                    headers=headers
+                )
+                logger.info(f"Answered call via direct API: {call_control_id}")
+                return {"status": "answered", "call_control_id": call_control_id}
+            except Exception as e2:
+                logger.error(f"Error with direct API call: {str(e2)}")
+                raise
     
     async def hangup_call(self, call_control_id: str) -> dict:
         """Hangup a call"""
