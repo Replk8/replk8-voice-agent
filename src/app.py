@@ -143,6 +143,10 @@ async def handle_speak_ended(payload):
         logger.info(f"Greeting finished, starting recording for call {call_control_id}")
         await telnyx_service.start_recording(call_control_id)
         call_states[call_control_id]["listening"] = True
+        
+        # Schedule a check to process recording after 5 seconds
+        import asyncio
+        asyncio.create_task(check_for_speech(call_control_id, 5))
     
     return JSONResponse(content={"status": "ok"})
 
@@ -159,6 +163,22 @@ async def handle_call_hangup(payload):
     
     logger.info(f"Call ended: {call_control_id}")
     return JSONResponse(content={"status": "ok"})
+
+async def check_for_speech(call_control_id: str, delay_seconds: int):
+    """Check for speech after a delay and process it"""
+    import asyncio
+    await asyncio.sleep(delay_seconds)
+    
+    # Check if call is still active
+    if call_control_id not in call_states:
+        return
+    
+    try:
+        # Stop recording to trigger processing
+        await telnyx_service.stop_recording(call_control_id)
+        logger.info(f"Stopped recording for call {call_control_id} to trigger processing")
+    except Exception as e:
+        logger.error(f"Error stopping recording: {str(e)}")
 
 if __name__ == "__main__":
     uvicorn.run(app, host="0.0.0.0", port=8000)
