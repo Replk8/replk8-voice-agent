@@ -1,0 +1,484 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Replk8 TTS Demo</title>
+    <style>
+        /* Replk8 TTS Widget Styles */
+        .replk8-tts-widget {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 30px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            border-radius: 20px;
+            box-shadow: 0 20px 40px rgba(0,0,0,0.1);
+            color: white;
+        }
+
+        .replk8-tts-header {
+            text-align: center;
+            margin-bottom: 30px;
+        }
+
+        .replk8-tts-header h2 {
+            font-size: 2.5em;
+            margin-bottom: 10px;
+            color: white;
+        }
+
+        .replk8-tts-header p {
+            font-size: 1.1em;
+            color: rgba(255, 255, 255, 0.9);
+        }
+
+        .replk8-tts-form {
+            background: white;
+            border-radius: 15px;
+            padding: 30px;
+            margin-bottom: 20px;
+        }
+
+        .replk8-tts-form-group {
+            margin-bottom: 25px;
+        }
+
+        .replk8-tts-form-group label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: 600;
+            color: #333;
+            font-size: 16px;
+        }
+
+        .replk8-tts-textarea {
+            width: 100%;
+            padding: 15px;
+            border: 2px solid #e1e5e9;
+            border-radius: 10px;
+            font-size: 16px;
+            resize: vertical;
+            min-height: 120px;
+            transition: border-color 0.3s;
+            font-family: inherit;
+        }
+
+        .replk8-tts-textarea:focus {
+            outline: none;
+            border-color: #667eea;
+            box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+        }
+
+        .replk8-tts-voice-selection {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 20px;
+            margin-bottom: 25px;
+        }
+
+        @media (max-width: 768px) {
+            .replk8-tts-voice-selection {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        .replk8-tts-voice-group {
+            border: 2px solid #e1e5e9;
+            border-radius: 10px;
+            padding: 20px;
+            transition: border-color 0.3s;
+            background: #f8f9fa;
+        }
+
+        .replk8-tts-voice-group:hover {
+            border-color: #667eea;
+        }
+
+        .replk8-tts-voice-group h3 {
+            margin-bottom: 15px;
+            color: #333;
+            font-size: 1.2em;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .replk8-tts-select {
+            width: 100%;
+            padding: 12px;
+            border: 2px solid #e1e5e9;
+            border-radius: 8px;
+            font-size: 14px;
+            background: white;
+            cursor: pointer;
+            transition: border-color 0.3s;
+        }
+
+        .replk8-tts-select:focus {
+            outline: none;
+            border-color: #667eea;
+        }
+
+        .replk8-tts-generate-btn {
+            width: 100%;
+            padding: 18px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            border-radius: 10px;
+            font-size: 18px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        .replk8-tts-generate-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 20px rgba(102, 126, 234, 0.3);
+        }
+
+        .replk8-tts-generate-btn:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+            transform: none;
+            box-shadow: none;
+        }
+
+        .replk8-tts-audio-container {
+            background: white;
+            border-radius: 15px;
+            padding: 30px;
+            display: none;
+            margin-top: 20px;
+        }
+
+        .replk8-tts-audio-container.show {
+            display: block;
+            animation: fadeIn 0.5s ease-in;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .replk8-tts-audio-container h3 {
+            color: #333;
+            margin-bottom: 20px;
+            text-align: center;
+            font-size: 1.5em;
+        }
+
+        .replk8-tts-audio-item {
+            margin-bottom: 25px;
+            padding: 20px;
+            background: #f8f9fa;
+            border-radius: 10px;
+            border-left: 4px solid #667eea;
+            transition: transform 0.2s;
+        }
+
+        .replk8-tts-audio-item:hover {
+            transform: translateX(5px);
+        }
+
+        .replk8-tts-audio-item h4 {
+            margin-bottom: 15px;
+            color: #333;
+            font-size: 1.1em;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .replk8-tts-audio-item audio {
+            width: 100%;
+            margin-top: 10px;
+            border-radius: 8px;
+        }
+
+        .replk8-tts-loading {
+            text-align: center;
+            color: #666;
+            font-style: italic;
+            padding: 20px;
+        }
+
+        .replk8-tts-error {
+            color: #dc3545;
+            background: #f8d7da;
+            padding: 15px;
+            border-radius: 8px;
+            margin-top: 10px;
+            border-left: 4px solid #dc3545;
+        }
+
+        .replk8-tts-success {
+            color: #155724;
+            background: #d4edda;
+            padding: 15px;
+            border-radius: 8px;
+            margin-top: 10px;
+            border-left: 4px solid #28a745;
+        }
+
+        /* Service badges */
+        .replk8-tts-badge {
+            display: inline-block;
+            padding: 4px 8px;
+            border-radius: 12px;
+            font-size: 12px;
+            font-weight: bold;
+            text-transform: uppercase;
+        }
+
+        .replk8-tts-badge-polly {
+            background: #ff9900;
+            color: white;
+        }
+
+        .replk8-tts-badge-elevenlabs {
+            background: #667eea;
+            color: white;
+        }
+
+        /* Loading spinner */
+        .replk8-tts-spinner {
+            display: inline-block;
+            width: 20px;
+            height: 20px;
+            border: 3px solid rgba(255,255,255,.3);
+            border-radius: 50%;
+            border-top-color: #fff;
+            animation: spin 1s ease-in-out infinite;
+        }
+
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+    </style>
+</head>
+<body>
+    <div class="replk8-tts-widget">
+        <div class="replk8-tts-header">
+            <h2>🎤 Replk8 Voice Demo</h2>
+            <p>Experience the power of AI voice synthesis with Amazon Polly and Eleven Labs</p>
+        </div>
+
+        <form class="replk8-tts-form" id="replk8TtsForm">
+            <div class="replk8-tts-form-group">
+                <label for="replk8TextInput">Enter your text:</label>
+                <textarea 
+                    id="replk8TextInput" 
+                    class="replk8-tts-textarea"
+                    placeholder="Type or paste your text here... (e.g., 'Hello! Welcome to Replk8. How can I help you today?')"
+                    required
+                ></textarea>
+            </div>
+
+            <div class="replk8-tts-voice-selection">
+                <div class="replk8-tts-voice-group">
+                    <h3>🎵 Amazon Polly Voices</h3>
+                    <select id="replk8PollyVoice" class="replk8-tts-select">
+                        <option value="">Select a Polly voice...</option>
+                        <option value="Joanna">Joanna (Female, Professional)</option>
+                        <option value="Matthew">Matthew (Male, Professional)</option>
+                        <option value="Ivy">Ivy (Female, Friendly)</option>
+                        <option value="Justin">Justin (Male, Casual)</option>
+                        <option value="Kendra">Kendra (Female, Warm)</option>
+                        <option value="Kimberly">Kimberly (Female, Clear)</option>
+                        <option value="Salli">Salli (Female, Natural)</option>
+                    </select>
+                </div>
+
+                <div class="replk8-tts-voice-group">
+                    <h3>🌟 Eleven Labs Voices</h3>
+                    <select id="replk8ElevenlabsVoice" class="replk8-tts-select">
+                        <option value="">Select an Eleven Labs voice...</option>
+                        <option value="21m00Tcm4TlvDq8ikWAM">Rachel (Professional Female)</option>
+                        <option value="AZnzlk1XvdvUeBnXmlld">Domi (Professional Female)</option>
+                        <option value="EXAVITQu4vr4xnSDxMaL">Bella (Friendly Female)</option>
+                        <option value="ErXwobaYiN019PkySvjV">Antoni (Professional Male)</option>
+                        <option value="MF3mGyEYCl7XYWbV9V6O">Elli (Warm Female)</option>
+                        <option value="TxGEqnHWrfWFTfGW9XjX">Josh (Professional Male)</option>
+                        <option value="pNInz6obpgDQGcFmaJgB">Adam (Deep Male)</option>
+                        <option value="yoZ06aMxZJJ28mfd3POQ">Sam (Casual Male)</option>
+                    </select>
+                </div>
+            </div>
+
+            <button type="submit" class="replk8-tts-generate-btn" id="replk8GenerateBtn">
+                🎵 Generate Speech
+            </button>
+        </form>
+
+        <div class="replk8-tts-audio-container" id="replk8AudioContainer">
+            <h3>Generated Audio</h3>
+            <div id="replk8AudioResults"></div>
+        </div>
+    </div>
+
+    <script>
+        // Replk8 TTS Widget JavaScript
+        document.getElementById('replk8TtsForm').addEventListener('submit', async function(e) {
+            e.preventDefault();
+            
+            const text = document.getElementById('replk8TextInput').value.trim();
+            const pollyVoice = document.getElementById('replk8PollyVoice').value;
+            const elevenlabsVoice = document.getElementById('replk8ElevenlabsVoice').value;
+            
+            if (!text) {
+                alert('Please enter some text to convert to speech.');
+                return;
+            }
+            
+            if (!pollyVoice && !elevenlabsVoice) {
+                alert('Please select at least one voice.');
+                return;
+            }
+            
+            const generateBtn = document.getElementById('replk8GenerateBtn');
+            const audioContainer = document.getElementById('replk8AudioContainer');
+            const audioResults = document.getElementById('replk8AudioResults');
+            
+            // Show loading state
+            generateBtn.disabled = true;
+            generateBtn.innerHTML = '<span class="replk8-tts-spinner"></span> Generating...';
+            audioContainer.classList.remove('show');
+            audioResults.innerHTML = '<div class="replk8-tts-loading">Generating speech samples...</div>';
+            
+            try {
+                const results = [];
+                const serverUrl = 'http://3.136.7.249:8000'; // Your EC2 server
+                
+                // Generate Polly speech if selected
+                if (pollyVoice) {
+                    try {
+                        const pollyResponse = await fetch(`${serverUrl}/api/tts/generate`, {
+                            method: 'POST',
+                            headers: {
+                                'Content-Type': 'application/json',
+                            },
+                            body: JSON.stringify({
+                                text: text,
+                                service: 'polly',
+                                voice_id: pollyVoice
+                            })
+                        });
+                        
+                        if (pollyResponse.ok) {
+                            const pollyData = await pollyResponse.json();
+                            results.push({
+                                service: 'Amazon Polly',
+                                voice: pollyVoice,
+                                audio_url: `${serverUrl}${pollyData.audio_url}`,
+                                success: true
+                            });
+                        } else {
+                            results.push({
+                                service: 'Amazon Polly',
+                                voice: pollyVoice,
+                                error: 'Failed to generate Polly speech',
+                                success: false
+                            });
+                        }
+                    } catch (error) {
+                        results.push({
+                            service: 'Amazon Polly',
+                            voice: pollyVoice,
+                            error: error.message,
+                            success: false
+                        });
+                    }
+                }
+                
+                // Generate Eleven Labs speech if selected
+                if (elevenlabsVoice) {
+                    try {
+                        const elevenlabsResponse = await fetch(`${serverUrl}/api/tts/generate`, {
+                            method: 'POST',
+                            headers: {
+                                'Content-Type': 'application/json',
+                            },
+                            body: JSON.stringify({
+                                text: text,
+                                service: 'elevenlabs',
+                                voice_id: elevenlabsVoice
+                            })
+                        });
+                        
+                        if (elevenlabsResponse.ok) {
+                            const elevenlabsData = await elevenlabsResponse.json();
+                            results.push({
+                                service: 'Eleven Labs',
+                                voice: elevenlabsVoice,
+                                audio_url: `${serverUrl}${elevenlabsData.audio_url}`,
+                                success: true
+                            });
+                        } else {
+                            results.push({
+                                service: 'Eleven Labs',
+                                voice: elevenlabsVoice,
+                                error: 'Failed to generate Eleven Labs speech',
+                                success: false
+                            });
+                        }
+                    } catch (error) {
+                        results.push({
+                            service: 'Eleven Labs',
+                            voice: elevenlabsVoice,
+                            error: error.message,
+                            success: false
+                        });
+                    }
+                }
+                
+                // Display results
+                let resultsHtml = '';
+                results.forEach(result => {
+                    if (result.success) {
+                        const badgeClass = result.service === 'Amazon Polly' ? 'replk8-tts-badge-polly' : 'replk8-tts-badge-elevenlabs';
+                        resultsHtml += `
+                            <div class="replk8-tts-audio-item">
+                                <h4>
+                                    <span class="replk8-tts-badge ${badgeClass}">${result.service}</span>
+                                    ${result.voice}
+                                </h4>
+                                <audio controls>
+                                    <source src="${result.audio_url}" type="audio/mpeg">
+                                    Your browser does not support the audio element.
+                                </audio>
+                            </div>
+                        `;
+                    } else {
+                        const badgeClass = result.service === 'Amazon Polly' ? 'replk8-tts-badge-polly' : 'replk8-tts-badge-elevenlabs';
+                        resultsHtml += `
+                            <div class="replk8-tts-audio-item">
+                                <h4>
+                                    <span class="replk8-tts-badge ${badgeClass}">${result.service}</span>
+                                    ${result.voice}
+                                </h4>
+                                <div class="replk8-tts-error">Error: ${result.error}</div>
+                            </div>
+                        `;
+                    }
+                });
+                
+                audioResults.innerHTML = resultsHtml;
+                audioContainer.classList.add('show');
+                
+            } catch (error) {
+                audioResults.innerHTML = `<div class="replk8-tts-error">Error: ${error.message}</div>`;
+                audioContainer.classList.add('show');
+            } finally {
+                // Reset button
+                generateBtn.disabled = false;
+                generateBtn.innerHTML = '🎵 Generate Speech';
+            }
+        });
+    </script>
+</body>
+</html> 
