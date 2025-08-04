@@ -25,6 +25,9 @@ tts_service = TTSService()
 openai_service = OpenAIService()
 customer_service = CustomerService()
 
+# Track call states to prevent duplicate processing
+call_states = {}
+
 @app.get("/")
 async def root():
     return {"message": "Replk8 AI Voice Agent is running"}
@@ -44,6 +47,13 @@ async def telnyx_webhook(request: Request):
             return await handle_call_answered(payload)
         elif event_type == "call.recording.saved":
             return await handle_recording_saved(payload)
+        elif event_type == "call.speak.started":
+            logger.info("Call speak started")
+            return JSONResponse(content={"status": "ok"})
+        elif event_type == "call.speak.ended":
+            return await handle_speak_ended(payload)
+        elif event_type == "call.hangup":
+            return await handle_call_hangup(payload)
         else:
             logger.warning(f"Unhandled event type: {event_type}")
             return JSONResponse(content={"status": "ok"})
@@ -69,6 +79,14 @@ async def handle_call_answered(payload):
     call_control_id = payload["data"]["payload"]["call_control_id"]
     from_number = payload["data"]["payload"]["from"]
     
+    # Prevent duplicate processing
+    if call_control_id in call_states and call_states[call_control_id].get("answered"):
+        logger.info(f"Call {call_control_id} already answered, skipping")
+        return JSONResponse(content={"status": "ok"})
+    
+    # Mark as answered
+    call_states[call_control_id] = {"answered": True, "greeting_spoken": False}
+    
     # Get customer-specific voice settings
     voice_settings = customer_service.get_voice_settings(from_number)
     business_context = customer_service.get_business_context(from_number)
@@ -81,9 +99,7 @@ async def handle_call_answered(payload):
     
     # Use Telnyx built-in TTS for now (more reliable than file upload)
     await telnyx_service.speak_text(call_control_id, greeting)
-    
-    # Start listening for speech
-    await telnyx_service.start_recording(call_control_id)
+    call_states[call_control_id]["greeting_spoken"] = True
     
     return JSONResponse(content={"status": "ok"})
 
@@ -116,6 +132,32 @@ async def handle_recording_saved(payload):
         # Continue listening
         await telnyx_service.start_recording(call_control_id)
     
+    return JSONResponse(content={"status": "ok"})
+
+async def handle_speak_ended(payload):
+    """Handle when TTS finishes speaking"""
+    call_control_id = payload["data"]["payload"]["call_control_id"]
+    
+    # Only start recording after the greeting is done
+    if call_control_id in call_states and call_states[call_control_id].get("greeting_spoken"):
+        logger.info(f"Greeting finished, starting recording for call {call_control_id}")
+        await telnyx_service.start_recording(call_control_id)
+        call_states[call_control_id]["listening"] = True
+    
+    return JSONResponse(content={"status": "ok"})
+
+async def handle_call_hangup(payload):
+    """Handle call hangup"""
+    call_control_id = payload["data"]["payload"]["call_control_id"]
+    
+    # Clean up call state
+    if call_control_id in call_states:
+        del call_states[call_control_id]
+    
+    # Clear conversation history
+    openai_service.clear_conversation(call_control_id)
+    
+    logger.info(f"Call ended: {call_control_id}")
     return JSONResponse(content={"status": "ok"})
 
 if __name__ == "__main__":

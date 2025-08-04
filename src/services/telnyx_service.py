@@ -102,13 +102,23 @@ class TelnyxService:
     async def start_recording(self, call_control_id: str, channels: str = "single") -> dict:
         """Start recording the call"""
         try:
-            result = telnyx.Call.record_start(
-                call_control_id,
-                channels=channels,
-                format="mp3"
+            # Use direct API approach
+            import requests
+            headers = {
+                'Authorization': f'Bearer {self.api_key}',
+                'Content-Type': 'application/json'
+            }
+            data = {
+                'channels': channels,
+                'format': 'mp3'
+            }
+            response = requests.post(
+                f'https://api.telnyx.com/v2/calls/{call_control_id}/actions/record_start',
+                headers=headers,
+                json=data
             )
             logger.info(f"Started recording call: {call_control_id}")
-            return result
+            return {"status": "recording", "call_control_id": call_control_id}
         except Exception as e:
             logger.error(f"Error starting recording: {str(e)}")
             raise
