@@ -18,7 +18,7 @@ class TelnyxService:
         try:
             result = telnyx.Call.answer(call_control_id)
             logger.info(f"Answered call: {call_control_id}")
-            return result
+            return {"status": "answered", "call_control_id": call_control_id}
         except Exception as e:
             logger.error(f"Error answering call: {str(e)}")
             raise
@@ -28,7 +28,7 @@ class TelnyxService:
         try:
             result = telnyx.Call.hangup(call_control_id)
             logger.info(f"Hung up call: {call_control_id}")
-            return result
+            return {"status": "hung_up", "call_control_id": call_control_id}
         except Exception as e:
             logger.error(f"Error hanging up call: {str(e)}")
             raise
