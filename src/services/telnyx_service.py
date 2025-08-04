@@ -54,12 +54,22 @@ class TelnyxService:
     async def play_audio(self, call_control_id: str, media_url: str) -> dict:
         """Play audio file to the caller"""
         try:
-            result = telnyx.Call.playback_start(
-                call_control_id, 
-                media_url=media_url
+            # Try direct API approach first
+            import requests
+            headers = {
+                'Authorization': f'Bearer {self.api_key}',
+                'Content-Type': 'application/json'
+            }
+            data = {
+                'media_url': media_url
+            }
+            response = requests.post(
+                f'https://api.telnyx.com/v2/calls/{call_control_id}/actions/playback_start',
+                headers=headers,
+                json=data
             )
             logger.info(f"Playing audio on call {call_control_id}: {media_url}")
-            return result
+            return {"status": "playing", "call_control_id": call_control_id}
         except Exception as e:
             logger.error(f"Error playing audio: {str(e)}")
             raise
@@ -67,14 +77,24 @@ class TelnyxService:
     async def speak_text(self, call_control_id: str, text: str, voice: str = "female") -> dict:
         """Use Telnyx built-in TTS to speak text"""
         try:
-            result = telnyx.Call.speak(
-                call_control_id,
-                payload=text,
-                voice=voice,
-                language="en-US"
+            # Use direct API approach
+            import requests
+            headers = {
+                'Authorization': f'Bearer {self.api_key}',
+                'Content-Type': 'application/json'
+            }
+            data = {
+                'payload': text,
+                'voice': voice,
+                'language': 'en-US'
+            }
+            response = requests.post(
+                f'https://api.telnyx.com/v2/calls/{call_control_id}/actions/speak',
+                headers=headers,
+                json=data
             )
             logger.info(f"Speaking text on call {call_control_id}: {text[:50]}...")
-            return result
+            return {"status": "speaking", "call_control_id": call_control_id}
         except Exception as e:
             logger.error(f"Error speaking text: {str(e)}")
             raise

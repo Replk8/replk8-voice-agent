@@ -79,16 +79,8 @@ async def handle_call_answered(payload):
     else:
         greeting = "Hello! Thank you for calling. How can I help you today?"
     
-    # Generate TTS audio using customer's preferred service
-    audio_url = await tts_service.generate_speech(
-        greeting, 
-        service=voice_settings["service"],
-        voice_id=voice_settings["voice_id"],
-        language=voice_settings["language"]
-    )
-    
-    # Play the greeting
-    await telnyx_service.play_audio(call_control_id, audio_url)
+    # Use Telnyx built-in TTS for now (more reliable than file upload)
+    await telnyx_service.speak_text(call_control_id, greeting)
     
     # Start listening for speech
     await telnyx_service.start_recording(call_control_id)
@@ -118,16 +110,8 @@ async def handle_recording_saved(payload):
             language
         )
         
-        # Convert response to speech using customer's TTS preference
-        audio_url = await tts_service.generate_speech(
-            ai_response, 
-            service=voice_settings["service"],
-            voice_id=voice_settings["voice_id"],
-            language=voice_settings["language"]
-        )
-        
-        # Play the AI response
-        await telnyx_service.play_audio(call_control_id, audio_url)
+        # Use Telnyx built-in TTS for AI responses (more reliable)
+        await telnyx_service.speak_text(call_control_id, ai_response)
         
         # Continue listening
         await telnyx_service.start_recording(call_control_id)
